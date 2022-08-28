@@ -4,13 +4,7 @@
 ## 如何使用
 
 ```gradle
-repositories {
-    mavenCentral()
-}
 
-dependencies {
-    implementation "com.github.appdev:ComposeSmartRefreshLayout:1.0.0"
-}
 ```
 
 ```kotlin
