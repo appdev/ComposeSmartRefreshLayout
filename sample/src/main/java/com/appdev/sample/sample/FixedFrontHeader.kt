@@ -1,24 +1,32 @@
 package com.appdev.sample.sample
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.appdev.compose.composesmartrefreshlayout.SwipeRefreshStyle
+import com.appdev.sample.MainViewModel
+import com.appdev.sample.R
 import com.appdev.sample.RefreshLayout
+import com.appdev.sample.ext.Color
 import com.appdev.sample.rememberRefreshLayoutState
-import com.appdev.sample.widget.RefreshColumnItem
 import com.appdev.sample.widget.TitleBar
 import kotlinx.coroutines.delay
 
 @Composable
-fun fixedFrontHeaderSample() {
+fun fixedFrontHeaderSample(viewModel: MainViewModel = viewModel()) {
     var refreshing by remember { mutableStateOf(false) }
-    val list = (1..20).toList()
+    val mainUiState = viewModel.mainUiState.observeAsState()
     LaunchedEffect(refreshing) {
         if (refreshing) {
             delay(2000)
@@ -29,9 +37,7 @@ fun fixedFrontHeaderSample() {
         enableLoadMore = true,
         enableTwoLevel = true
     )
-    var size by remember {
-        mutableStateOf(20)
-    }
+
     Column() {
         TitleBar(title = "FixedFront Header", true) {
 //            activity?.finish()
@@ -39,23 +45,40 @@ fun fixedFrontHeaderSample() {
         RefreshLayout(
             state = refreshState,
             onRefresh = {
-                delay(3000)
-                size = 20
+                viewModel.fillData(true)
+                delay(1000)
             },
             onLoadMore = {
-                delay(3000)
-                size += 20
-            }
+                viewModel.fillData(false)
+                delay(1000)
+            }, refreshStyle = SwipeRefreshStyle.FixedContent
         ) {
             LazyColumn(
                 modifier = Modifier
                     .padding(0.dp, 16.dp, 0.dp, 0.dp)
                     .background(Color.White)
             ) {
-                items(list) {
-                    val title = "第${it}条数据"
-                    val subTitle = "这是测试的第${it}条数据"
-                    RefreshColumnItem(title = title, subTitle = subTitle)
+                mainUiState.value?.data?.let {
+                    itemsIndexed(it) { index, item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                                .background(if (index % 2 == 0) Color.LightGray else Color.White)
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                modifier = Modifier
+                                    .width(32.dp)
+                                    .height(32.dp),
+                                painter = painterResource(id = item.icon),
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = item.title, color = R.color.text_color.Color())
+                        }
+                    }
                 }
             }
         }

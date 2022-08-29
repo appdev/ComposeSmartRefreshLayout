@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.appdev.sample.sample.fixedFrontHeaderSample
 
 /**
  * 内容 导航
@@ -30,7 +31,8 @@ fun NavigationHost(
             route = "main"
         ) {
             //系统颜色的状态栏
-            swipeRefresh()
+//            swipeRefresh()
+            fixedFrontHeaderSample()
 
             //点击两次返回才关闭app
             BackHandler {

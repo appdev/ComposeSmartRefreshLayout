@@ -2,10 +2,7 @@ package com.appdev.sample.widget
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.runtime.Composable
@@ -30,7 +27,7 @@ fun TitleBar(title: String, showArrow: Boolean = true, callback: () -> Unit = {}
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp)
+                .height(56.dp)
                 .background(Color(0xff33aaff))
                 .padding(16.dp, 0.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -40,13 +37,12 @@ fun TitleBar(title: String, showArrow: Boolean = true, callback: () -> Unit = {}
                     onClick = callback,
                     Modifier
                         .size(24.dp)
-                        .padding(0.dp, 0.dp, 16.dp, 0.dp)
                 ) {
-                    Icon(imageVector = Icons.Rounded.ArrowBack, contentDescription = "")
+                    Icon(imageVector = Icons.Rounded.ArrowBack, contentDescription = "", tint = Color.White)
                 }
 
             }
-            Text(text = title, color = Color.White, style = MaterialTheme.typography.h6)
+            Text(text = title, color = Color.White, style = MaterialTheme.typography.h6, modifier = Modifier.padding(start = 8.dp))
         }
     }
 }
