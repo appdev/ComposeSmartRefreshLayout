@@ -8,7 +8,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.appdev.sample.sample.fixedFrontHeaderSample
+import com.appdev.sample.compose.LottieRefresh
+import com.appdev.sample.compose.RefreshLayoutDemo
+import com.appdev.sample.compose.SmartRefresh
+import com.appdev.sample.utils.RouteName
 
 /**
  * 内容 导航
@@ -20,26 +23,32 @@ fun NavigationHost(
     onBackClick: () -> Unit,
     navController: NavHostController
 ) {
-
     NavHost(
         navController,
-        startDestination = "main",
+        startDestination = RouteName.HOME,
         modifier = modifier,
     ) {
         //主页面
         composable(
-            route = "main"
+            route = RouteName.HOME
         ) {
             //系统颜色的状态栏
-//            swipeRefresh()
-            fixedFrontHeaderSample()
-
+            RefreshLayoutDemo(navController)
             //点击两次返回才关闭app
             BackHandler {
 //                TwoBackFinish().execute(context, onFinish)
             }
         }
-
+        composable(
+            route = RouteName.REFRESH_HEADER
+        ) {
+            SmartRefresh()
+        }
+        composable(
+            route = RouteName.REFRESH_LOTTIE_HEADER
+        ) {
+            LottieRefresh()
+        }
         //H5页面
         composable(
             route = "webview?url={url}", arguments = listOf(
@@ -54,27 +63,6 @@ fun NavigationHost(
         }
     }
 }
-
-/**
- * 页面跳转关键类
- */
-enum class KeyNavigationRoute(
-    val route: String
-) {
-    //主页面
-    MAIN("main"),
-
-    //H5
-    WEBVIEW("webview"),
-
-}
-
-
-
-
-
-
-
 
 
 

@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalFoundationApi::class)
 
-package com.appdev.sample
+package com.appdev.sample.compose
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -21,37 +21,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.appdev.compose.composesmartrefreshlayout.*
+import com.appdev.compose.composesmartrefreshlayout.SmartSwipeStateFlag
+import com.appdev.compose.composesmartrefreshlayout.rememberSmartSwipeRefreshState
+import com.appdev.sample.MainViewModel
+import com.appdev.sample.R
 import com.appdev.sample.ext.Color
 
 @Composable
-fun swipeRefresh(viewModel: MainViewModel = viewModel()) {
+fun SmartRefresh(viewModel: MainViewModel = viewModel()) {
 
     val scrollState = rememberLazyListState()
     val mainUiState = viewModel.mainUiState.observeAsState()
     val refreshState = rememberSmartSwipeRefreshState()
-    SmartSwipeRefresh(
-        onRefresh = {
-            viewModel.fillData(true)
-        },
-        onLoadMore = {
-            viewModel.fillData(false)
-        },
-        state = refreshState,
-        isNeedRefresh = true,
-        isNeedLoadMore = true,
-        headerIndicator = {
-            MyRefreshHeader(refreshState.refreshFlag, true)
-        },
-        footerIndicator = {
-            MyRefreshFooter(refreshState.loadMoreFlag, true)
-        }) {
+    SmartRefreshBuilder(viewModel, scrollState = scrollState, refreshState = refreshState) {
 
-        LaunchedEffect(refreshState.smartSwipeRefreshAnimateFinishing) {
-            if (refreshState.smartSwipeRefreshAnimateFinishing.isFinishing && !refreshState.smartSwipeRefreshAnimateFinishing.isRefresh) {
-                scrollState.animateScrollToItem(scrollState.firstVisibleItemIndex + 1)
-            }
-        }
         LaunchedEffect(mainUiState.value) {
             mainUiState.value?.let {
                 if (!it.isLoading) {

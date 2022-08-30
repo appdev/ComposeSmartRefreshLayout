@@ -1,12 +1,19 @@
-package com.appdev.sample.sample
+@file:OptIn(ExperimentalFoundationApi::class)
 
+package com.appdev.sample.compose
+
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalOverscrollConfiguration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,49 +21,48 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.appdev.compose.composesmartrefreshlayout.SwipeRefreshStyle
+import com.appdev.compose.composesmartrefreshlayout.SmartSwipeStateFlag
+import com.appdev.compose.composesmartrefreshlayout.rememberSmartSwipeRefreshState
 import com.appdev.sample.MainViewModel
 import com.appdev.sample.R
-import com.appdev.sample.RefreshLayout
 import com.appdev.sample.ext.Color
-import com.appdev.sample.rememberRefreshLayoutState
-import com.appdev.sample.widget.TitleBar
-import kotlinx.coroutines.delay
+import com.appdev.sample.header.LottieRefreshHeader
 
 @Composable
-fun fixedFrontHeaderSample(viewModel: MainViewModel = viewModel()) {
-    var refreshing by remember { mutableStateOf(false) }
-    val mainUiState = viewModel.mainUiState.observeAsState()
-    LaunchedEffect(refreshing) {
-        if (refreshing) {
-            delay(2000)
-            refreshing = false
-        }
-    }
-    val refreshState = rememberRefreshLayoutState(
-        enableLoadMore = true,
-        enableTwoLevel = true
-    )
+fun LottieRefresh(viewModel: MainViewModel = viewModel()) {
 
-    Column() {
-        TitleBar(title = "FixedFront Header", true) {
-//            activity?.finish()
+    val scrollState = rememberLazyListState()
+    val mainUiState = viewModel.mainUiState.observeAsState()
+    val refreshState = rememberSmartSwipeRefreshState()
+    SmartRefreshBuilder(
+        viewModel,
+        scrollState = scrollState,
+        refreshState = refreshState,
+        headerIndicator = {
+            LottieRefreshHeader(flag = refreshState.refreshFlag)
+        }) {
+
+        LaunchedEffect(mainUiState.value) {
+            mainUiState.value?.let {
+                if (!it.isLoading) {
+                    refreshState.refreshFlag = when (it.refreshSuccess) {
+                        true -> SmartSwipeStateFlag.SUCCESS
+                        false -> SmartSwipeStateFlag.ERROR
+                        else -> SmartSwipeStateFlag.IDLE
+                    }
+                    refreshState.loadMoreFlag = when (it.loadMoreSuccess) {
+                        true -> SmartSwipeStateFlag.SUCCESS
+                        false -> SmartSwipeStateFlag.ERROR
+                        else -> SmartSwipeStateFlag.IDLE
+                    }
+                }
+            }
         }
-        RefreshLayout(
-            state = refreshState,
-            onRefresh = {
-                viewModel.fillData(true)
-                delay(1000)
-            },
-            onLoadMore = {
-                viewModel.fillData(false)
-                delay(1000)
-            }, refreshStyle = SwipeRefreshStyle.FixedContent
-        ) {
+
+        CompositionLocalProvider(LocalOverscrollConfiguration.provides(null)) {
             LazyColumn(
-                modifier = Modifier
-                    .padding(0.dp, 16.dp, 0.dp, 0.dp)
-                    .background(Color.White)
+                modifier = Modifier.fillMaxSize(),
+                state = scrollState
             ) {
                 mainUiState.value?.data?.let {
                     itemsIndexed(it) { index, item ->

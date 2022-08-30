@@ -1,5 +1,6 @@
 package com.appdev.compose.composesmartrefreshlayout
 
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
@@ -42,11 +43,12 @@ class SmartSwipeRefreshState {
     }
 
     suspend fun snapToOffset(value: Dp) {
+        Log.d(TAG, "snapToOffset() called with: value = ${value.value}")
         mutatorMutex.mutate(MutatePriority.UserInput) {
             indicatorOffsetAnimatable.snapTo(value)
         }
     }
-
+    private val TAG = "SmartSwipeRefreshState"
     suspend fun animateToOffset(value: Dp) {
         mutatorMutex.mutate {
             indicatorOffsetAnimatable.animateTo(value, tween(300)) {
