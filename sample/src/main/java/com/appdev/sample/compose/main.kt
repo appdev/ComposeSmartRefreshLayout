@@ -37,7 +37,7 @@ fun RefreshLayoutDemo(navController: NavHostController) {
                 }
             }
             item {
-                RefreshColumnItem("Custom", "自定义Header使用Lottie") {
+                RefreshColumnItem("LottieRefresh", "自定义Header使用Lottie") {
                     RouteUtils.navTo(
                         navController,
                         RouteName.REFRESH_LOTTIE_HEADER

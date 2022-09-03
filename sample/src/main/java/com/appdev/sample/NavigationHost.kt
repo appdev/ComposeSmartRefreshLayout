@@ -9,8 +9,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.appdev.sample.compose.LottieRefresh
+import com.appdev.sample.compose.LottieRefreshBox
 import com.appdev.sample.compose.RefreshLayoutDemo
-import com.appdev.sample.compose.SmartRefresh
+import com.appdev.sample.compose.SmartRefresh2
 import com.appdev.sample.utils.RouteName
 
 /**
@@ -40,14 +41,14 @@ fun NavigationHost(
             }
         }
         composable(
-            route = RouteName.REFRESH_HEADER
+            route = RouteName.REFRESH_FIXED_HEADER
         ) {
-            SmartRefresh()
+            SmartRefresh2()
         }
         composable(
             route = RouteName.REFRESH_LOTTIE_HEADER
         ) {
-            LottieRefresh()
+            LottieRefreshBox()
         }
         //H5页面
         composable(

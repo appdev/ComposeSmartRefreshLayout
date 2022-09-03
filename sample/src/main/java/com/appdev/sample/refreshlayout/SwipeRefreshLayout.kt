@@ -1,5 +1,6 @@
 package com.appdev.sample.refreshlayout
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.*
@@ -44,8 +45,10 @@ fun SwipeRefreshLayout(
     val refreshTrigger = indicatorHeight * refreshTriggerRate
     val maxDrag = indicatorHeight * maxDragRate
     val state = rememberSwipeRefreshState(isRefreshing, refreshTrigger, maxDrag)
+
     LaunchedEffect(state.isSwipeInProgress, state.isRefreshing) {
         // If there's no swipe currently in progress, animate to the correct resting position
+        Log.d(TAG, "SwipeRefreshLayout $state")
         if (!state.isSwipeInProgress) {
             if (state.isRefreshing) {
                 state.animateOffsetTo(refreshTrigger)
@@ -54,7 +57,6 @@ fun SwipeRefreshLayout(
             }
         }
     }
-
     // Our nested scroll connection, which updates our state.
     val nestedScrollConnection = remember(state, coroutineScope) {
         SwipeRefreshNestedScrollConnection(state, coroutineScope) {
@@ -89,7 +91,7 @@ fun SwipeRefreshLayout(
         }
     }
 }
-
+private const val TAG = "SwipeRefreshLayout"
 private fun isHeaderNeedClip(state: SwipeRefreshState, indicatorHeight: Int): Boolean {
     return state.indicatorOffset < indicatorHeight
 }

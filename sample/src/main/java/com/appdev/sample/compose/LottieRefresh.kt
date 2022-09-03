@@ -29,6 +29,18 @@ import com.appdev.sample.ext.Color
 import com.appdev.sample.header.LottieRefreshHeader
 
 @Composable
+fun LottieRefreshBox(viewModel: MainViewModel = viewModel()) {
+    Box {
+        Text(text = "", modifier = Modifier
+            .height(200.dp)
+            .width(20.dp)
+            .background(Color.Yellow))
+        LottieRefresh()
+    }
+}
+
+
+@Composable
 fun LottieRefresh(viewModel: MainViewModel = viewModel()) {
 
     val scrollState = rememberLazyListState()

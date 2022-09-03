@@ -1,26 +1,26 @@
 package com.appdev.compose.composesmartrefreshlayout
 
 import android.util.Log
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
+import java.util.*
 
 /**
- * Created by appdev on 2022/6/13
+ * Created by Loren on 2022/6/13
  * Description -> 支持下拉刷新&加载更多的通用组件
  */
 @Composable
-fun SmartRefreshLayout(
+fun SmartSwipeRefresh2(
     modifier: Modifier = Modifier,
     onRefresh: (suspend () -> Unit)? = null,
     onLoadMore: (suspend () -> Unit)? = null,
@@ -29,14 +29,10 @@ fun SmartRefreshLayout(
     isNeedLoadMore: Boolean = true,
     headerThreshold: Dp? = null,
     footerThreshold: Dp? = null,
-    swipeStyle: SwipeRefreshStyle = SwipeRefreshStyle.Translate,
     headerIndicator: @Composable () -> Unit = { MyRefreshHeader(flag = state.refreshFlag) },
     footerIndicator: @Composable () -> Unit = { MyRefreshHeader(flag = state.loadMoreFlag) },
     content: @Composable () -> Unit
 ) {
-    var indicatorHeight by remember {
-        mutableStateOf(1f)
-    }
     val density = LocalDensity.current
     LaunchedEffect(Unit) {
         state.indicatorOffsetFlow.collect {
@@ -48,9 +44,11 @@ fun SmartRefreshLayout(
             state.snapToOffset(
                 when {
                     state.footerIsShow ->
-                        currentOffset.coerceAtMost(0.dp).coerceAtLeast(-(footerThreshold ?: Dp.Infinity))
+                        currentOffset.coerceAtMost(0.dp)
+                            .coerceAtLeast(-(footerThreshold ?: Dp.Infinity))
                     state.headerIsShow ->
-                        currentOffset.coerceAtLeast(0.dp).coerceAtMost(headerThreshold ?: Dp.Infinity)
+                        currentOffset.coerceAtLeast(0.dp)
+                            .coerceAtMost(headerThreshold ?: Dp.Infinity)
                     else -> currentOffset
                 }
             )
@@ -60,10 +58,14 @@ fun SmartRefreshLayout(
         when (state.refreshFlag) {
             SmartSwipeStateFlag.REFRESHING -> {
                 onRefresh?.invoke()
-                state.smartSwipeRefreshAnimateFinishing = state.smartSwipeRefreshAnimateFinishing.copy(isFinishing = false, isRefresh = true)
+                state.smartSwipeRefreshAnimateFinishing =
+                    state.smartSwipeRefreshAnimateFinishing.copy(
+                        isFinishing = false,
+                        isRefresh = true
+                    )
             }
             SmartSwipeStateFlag.SUCCESS, SmartSwipeStateFlag.ERROR -> {
-                delay(400)
+                delay(1000)
                 state.animateToOffset(0.dp)
             }
             else -> {}
@@ -73,10 +75,14 @@ fun SmartRefreshLayout(
         when (state.loadMoreFlag) {
             SmartSwipeStateFlag.REFRESHING -> {
                 onLoadMore?.invoke()
-                state.smartSwipeRefreshAnimateFinishing = state.smartSwipeRefreshAnimateFinishing.copy(isFinishing = false, isRefresh = false)
+                state.smartSwipeRefreshAnimateFinishing =
+                    state.smartSwipeRefreshAnimateFinishing.copy(
+                        isFinishing = false,
+                        isRefresh = false
+                    )
             }
             SmartSwipeStateFlag.SUCCESS, SmartSwipeStateFlag.ERROR -> {
-                delay(400)
+                delay(1000)
                 state.animateToOffset(0.dp)
             }
             else -> {}
@@ -97,37 +103,12 @@ fun SmartRefreshLayout(
                 contentAlignment = Alignment.TopCenter
             ) {
                 if (isNeedRefresh) {
-//                    Box(Modifier.offset(y = -header + state.indicatorOffset)) {
-//                        headerIndicator()
-//                    }
-                    Log.d(TAG, "SmartRefreshLayout called ${header.value}")
-                    Log.d(TAG, "SmartRefreshLayout called ${-header + state.indicatorOffset}")
-                    Box(modifier = Modifier
-                        .onGloballyPositioned {
-                            // 这里是刷新头的高度
-                            indicatorHeight = it.size.height.toFloat()
-                            Log.d(
-                                TAG,
-                                "SmartRefreshLayout indicatorOffset ${state.indicatorOffset}"
-                            )
-                        }
-//                        .let {
-//                            if (isHeaderNeedClip(
-//                                    state,
-//                                    indicatorHeight
-//                                )
-//                            ) it.clipToBounds() else it
-//                        }
-                        .offset {
-                            getHeaderOffset(swipeStyle, state, indicatorHeight)
-                        }
-                        .zIndex(getHeaderZIndex(swipeStyle))
-//                        .background(color = Color.White)
-                    ) {
+                    Box(Modifier.offset(y = -header + state.indicatorOffset)) {
                         headerIndicator()
                     }
                 }
                 // 因为无法测量出content的高度 所以footer偏移到content布局之下
+                Log.d("indicatorOffset", "SmartSwipeRefresh2 state.indicatorOffset ${state.indicatorOffset}")
                 Box(modifier = Modifier.offset(y = state.indicatorOffset)) {
                     content()
                     if (isNeedLoadMore) {
@@ -144,20 +125,6 @@ fun SmartRefreshLayout(
         }
     }
 }
-
-private const val TAG = "SmartRefreshLayout"
-@Composable
-fun rememberSmartSwipeRefreshState(): SmartSwipeRefreshState {
-    return remember {
-        SmartSwipeRefreshState()
-    }
-}
-
-data class SmartSwipeRefreshAnimateFinishing(
-    val isFinishing: Boolean = true,
-    val isRefresh: Boolean = true
-)
-
 @Composable
 private fun SubComposeSmartSwipeRefresh(
     headerIndicator: @Composable () -> Unit,
@@ -182,72 +149,3 @@ private fun SubComposeSmartSwipeRefresh(
         }
     }
 }
-
-
-private fun isHeaderNeedClip(state: SmartSwipeRefreshState, indicatorHeight: Float): Boolean {
-    return state.indicatorOffset.value < indicatorHeight
-}
-
-private fun getHeaderZIndex(style: SwipeRefreshStyle): Float {
-    return if (style == SwipeRefreshStyle.FixedFront || style == SwipeRefreshStyle.FixedContent) {
-        1f
-    } else {
-        0f
-    }
-}
-
-private fun getHeaderHeight(
-    indicatorHeight: Float,
-    style: SwipeRefreshStyle,
-    state: SmartSwipeRefreshState
-): Float {
-    return when (style) {
-        SwipeRefreshStyle.Center -> state.indicatorOffset.value
-        else -> indicatorHeight
-    }
-}
-
-private fun getHeaderOffset(
-    style: SwipeRefreshStyle,
-    state: SmartSwipeRefreshState,
-    indicatorHeight: Float
-): IntOffset {
-    return when (style) {
-        SwipeRefreshStyle.Translate -> {
-            IntOffset(0, (state.indicatorOffset.value - indicatorHeight).toInt())
-        }
-        SwipeRefreshStyle.FixedBehind, SwipeRefreshStyle.FixedFront -> {
-            IntOffset(0, 0)
-        }
-        SwipeRefreshStyle.Center -> {
-            Log.d(
-                TAG,
-                "getHeaderOffset called with: ${(state.indicatorOffset.value - indicatorHeight) / 2f}"
-            )
-            IntOffset(0, (state.indicatorOffset.value / 2f).toInt())
-        }
-        else -> {
-            IntOffset(0, (state.indicatorOffset.value - indicatorHeight).toInt())
-        }
-    }
-}
-
-private fun getContentOffset(
-    style: SwipeRefreshStyle,
-    state: SmartSwipeRefreshState
-): IntOffset {
-    return  IntOffset(0, state.indicatorOffset.value.toInt())
-//    return when (style) {
-//        SwipeRefreshStyle.Translate, SwipeRefreshStyle.Center -> {
-//            IntOffset(0, state.indicatorOffset.value.toInt())
-//        }
-//        SwipeRefreshStyle.FixedBehind -> {
-//            IntOffset(0, state.indicatorOffset.value.toInt())
-//        }
-//        else -> {
-//            IntOffset(0, state.indicatorOffset.value.toInt())
-//        }
-//    }
-}
-
-

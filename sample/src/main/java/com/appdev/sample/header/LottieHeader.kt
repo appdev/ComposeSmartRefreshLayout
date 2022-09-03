@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.*
+import com.appdev.compose.composesmartrefreshlayout.RefreshComponent
 import com.appdev.compose.composesmartrefreshlayout.SmartSwipeStateFlag
 
 @Composable
@@ -33,7 +34,7 @@ fun LottieRefreshHeader(flag: SmartSwipeStateFlag) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentHeight().background(Color.LightGray), contentAlignment = Alignment.TopCenter
+            .wrapContentHeight().background(Color.Green), contentAlignment = Alignment.Center
     ) {
         LottieAnimation(
             lottieComposition,

@@ -1,5 +1,6 @@
 package com.appdev.compose.composesmartrefreshlayout
 
+import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -91,12 +92,13 @@ class RefreshNestedScrollConnection(
             Offset.Zero
         }
     }
-
+    private val TAG = "RefreshNestedScrollConn"
     /**
      * indicatorOffset>=0 header显示 indicatorOffset<=0 footer显示
      * 拖动到头部快速滑动时 如果indicatorOffset>headerHeight则
      */
     override suspend fun onPreFling(available: Velocity): Velocity {
+        Log.d(TAG, "onPreFling() with: available = ${available.toString()}          $headerHeight")
         if (!state.isRefreshing()) {
             if (state.indicatorOffset >= headerHeight) {
                 state.animateToOffset(headerHeight)

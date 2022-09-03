@@ -9,7 +9,7 @@ import com.appdev.compose.composesmartrefreshlayout.*
 import com.appdev.sample.MainViewModel
 
 @Composable
-fun SmartRefreshBuilder(
+fun SmartRefreshBuilder2(
     viewModel: MainViewModel = viewModel(),
     scrollState: LazyListState = rememberLazyListState(),
     refreshState: SmartSwipeRefreshState,
@@ -17,7 +17,7 @@ fun SmartRefreshBuilder(
     footerIndicator: @Composable () -> Unit = { MyRefreshFooter(refreshState.loadMoreFlag, true) },
     content: @Composable () -> Unit
 ) {
-    SmartRefreshLayout(
+    SmartSwipeRefresh2(
         onRefresh = {
             viewModel.fillData(true)
         },
@@ -29,7 +29,7 @@ fun SmartRefreshBuilder(
         isNeedLoadMore = true,
         headerIndicator = headerIndicator,
         footerIndicator = footerIndicator,
-        swipeStyle = SwipeRefreshStyle.Center
+//        swipeStyle = SwipeRefreshStyle.Center
     ) {
         LaunchedEffect(refreshState.smartSwipeRefreshAnimateFinishing) {
             if (refreshState.smartSwipeRefreshAnimateFinishing.isFinishing && !refreshState.smartSwipeRefreshAnimateFinishing.isRefresh) {
