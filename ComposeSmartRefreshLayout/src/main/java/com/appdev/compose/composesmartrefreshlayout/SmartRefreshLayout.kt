@@ -111,13 +111,13 @@ fun SmartRefreshLayout(
                                 "SmartRefreshLayout indicatorOffset ${state.indicatorOffset}"
                             )
                         }
-//                        .let {
-//                            if (isHeaderNeedClip(
-//                                    state,
-//                                    indicatorHeight
-//                                )
-//                            ) it.clipToBounds() else it
-//                        }
+                        .let {
+                            if (isHeaderNeedClip(
+                                    state,
+                                    indicatorHeight
+                                )
+                            ) it.clipToBounds() else it
+                        }
                         .offset {
                             getHeaderOffset(swipeStyle, state, indicatorHeight)
                         }
@@ -128,7 +128,7 @@ fun SmartRefreshLayout(
                     }
                 }
                 // 因为无法测量出content的高度 所以footer偏移到content布局之下
-                Box(modifier = Modifier.offset(y = state.indicatorOffset)) {
+                Box(modifier = Modifier.offset { getContentOffset(  header,swipeStyle,state) }) {
                     content()
                     if (isNeedLoadMore) {
                         Box(
@@ -208,10 +208,12 @@ private fun getHeaderHeight(
 }
 
 private fun getHeaderOffset(
+
     style: SwipeRefreshStyle,
     state: SmartSwipeRefreshState,
     indicatorHeight: Float
 ): IntOffset {
+
     return when (style) {
         SwipeRefreshStyle.Translate -> {
             IntOffset(0, (state.indicatorOffset.value - indicatorHeight).toInt())
@@ -224,7 +226,7 @@ private fun getHeaderOffset(
                 TAG,
                 "getHeaderOffset called with: ${(state.indicatorOffset.value - indicatorHeight) / 2f}"
             )
-            IntOffset(0, (state.indicatorOffset.value / 2f).toInt())
+            IntOffset(0,((state.indicatorOffset.value - indicatorHeight) / 2f).toInt())
         }
         else -> {
             IntOffset(0, (state.indicatorOffset.value - indicatorHeight).toInt())
@@ -233,21 +235,22 @@ private fun getHeaderOffset(
 }
 
 private fun getContentOffset(
+    header: Dp,
     style: SwipeRefreshStyle,
     state: SmartSwipeRefreshState
 ): IntOffset {
-    return  IntOffset(0, state.indicatorOffset.value.toInt())
-//    return when (style) {
-//        SwipeRefreshStyle.Translate, SwipeRefreshStyle.Center -> {
-//            IntOffset(0, state.indicatorOffset.value.toInt())
-//        }
-//        SwipeRefreshStyle.FixedBehind -> {
-//            IntOffset(0, state.indicatorOffset.value.toInt())
-//        }
-//        else -> {
-//            IntOffset(0, state.indicatorOffset.value.toInt())
-//        }
-//    }
+    val minSize = (-header + state.indicatorOffset).value.toInt()
+    return when (style) {
+        SwipeRefreshStyle.Translate, SwipeRefreshStyle.Center -> {
+            IntOffset(0, minSize.coerceAtLeast(state.indicatorOffset.value.toInt()))
+        }
+        SwipeRefreshStyle.FixedBehind -> {
+            IntOffset(0, state.indicatorOffset.value.toInt())
+        }
+        else -> {
+            IntOffset(0, state.indicatorOffset.value.toInt())
+        }
+    }
 }
 
 
