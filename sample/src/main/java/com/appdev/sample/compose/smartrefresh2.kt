@@ -13,11 +13,10 @@ fun SmartRefreshBuilder2(
     viewModel: MainViewModel = viewModel(),
     scrollState: LazyListState = rememberLazyListState(),
     refreshState: SmartSwipeRefreshState,
-    headerIndicator: @Composable () -> Unit = { MyRefreshHeader(refreshState.refreshFlag, true) },
     footerIndicator: @Composable () -> Unit = { MyRefreshFooter(refreshState.loadMoreFlag, true) },
     content: @Composable () -> Unit
 ) {
-    SmartSwipeRefresh2(
+    SmartRefreshLayout(
         onRefresh = {
             viewModel.fillData(true)
         },
@@ -27,7 +26,6 @@ fun SmartRefreshBuilder2(
         state = refreshState,
         isNeedRefresh = true,
         isNeedLoadMore = true,
-        headerIndicator = headerIndicator,
         footerIndicator = footerIndicator,
 //        swipeStyle = SwipeRefreshStyle.Center
     ) {

@@ -27,7 +27,7 @@ fun SmartRefreshBuilder(
         state = refreshState,
         isNeedRefresh = true,
         isNeedLoadMore = true,
-        headerIndicator = headerIndicator,
+//        headerIndicator = headerIndicator,
         footerIndicator = footerIndicator,
         swipeStyle = SwipeRefreshStyle.Center
     ) {

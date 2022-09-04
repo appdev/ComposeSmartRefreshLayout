@@ -33,7 +33,6 @@ import com.appdev.sample.ext.Color
 
 @Composable
 fun SmartRefresh(viewModel: MainViewModel = viewModel()) {
-
     val scrollState = rememberLazyListState()
     val mainUiState = viewModel.mainUiState.observeAsState()
     val refreshState = rememberSmartSwipeRefreshState()
