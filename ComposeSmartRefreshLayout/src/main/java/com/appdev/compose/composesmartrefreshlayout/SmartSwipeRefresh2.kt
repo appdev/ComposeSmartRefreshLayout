@@ -1,10 +1,11 @@
 package com.appdev.compose.composesmartrefreshlayout
 
 import android.util.Log
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -13,7 +14,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
-import java.util.*
 
 /**
  * Created by Loren on 2022/6/13
@@ -103,7 +103,7 @@ fun SmartSwipeRefresh2(
                 contentAlignment = Alignment.TopCenter
             ) {
                 if (isNeedRefresh) {
-                    Box(Modifier.offset(y = -header + state.indicatorOffset)) {
+                    Box(Modifier.offset(y = getOffSetY(header, state))) {
                         headerIndicator()
                     }
                 }
@@ -125,6 +125,14 @@ fun SmartSwipeRefresh2(
         }
     }
 }
+
+@Composable
+private fun getOffSetY(
+    header: Dp,
+    state: SmartSwipeRefreshState
+) = (-header + state.indicatorOffset) / 2
+
+private const val TAG = "SmartSwipeRefresh2"
 @Composable
 private fun SubComposeSmartSwipeRefresh(
     headerIndicator: @Composable () -> Unit,

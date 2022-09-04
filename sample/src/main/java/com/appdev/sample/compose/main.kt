@@ -2,6 +2,7 @@ package com.appdev.sample.compose
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
@@ -13,6 +14,9 @@ import com.appdev.sample.widget.RefreshColumnItem
 @Composable
 fun RefreshLayoutDemo(navController: NavHostController) {
     val context = LocalContext.current
+    Scaffold() {
+
+    }
     Column {
         LottieView()
         LazyColumn {

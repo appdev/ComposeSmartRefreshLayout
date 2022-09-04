@@ -6,10 +6,7 @@ import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
@@ -43,10 +40,11 @@ class SmartSwipeRefreshState {
     }
 
     suspend fun snapToOffset(value: Dp) {
-        Log.d(TAG, "snapToOffset() called with: value = ${value.value}")
         mutatorMutex.mutate(MutatePriority.UserInput) {
             indicatorOffsetAnimatable.snapTo(value)
         }
+
+        Log.d(TAG, "refreshFlag: ${refreshFlag.name}       $value")
     }
     private val TAG = "SmartSwipeRefreshState"
     suspend fun animateToOffset(value: Dp) {
