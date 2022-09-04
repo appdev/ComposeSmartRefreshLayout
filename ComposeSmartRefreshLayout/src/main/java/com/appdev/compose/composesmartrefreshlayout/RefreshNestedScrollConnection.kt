@@ -7,12 +7,15 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
 
 
 class RefreshNestedScrollConnection(
+    val scope: CoroutineScope,
     val state: SmartSwipeRefreshState,
+    val dragMultiplier: Float,
     val headerHeight: Dp,
-    val footerHeight: Dp
+    val footerHeight: Dp,
 ) : NestedScrollConnection {
 
     /**
@@ -31,7 +34,7 @@ class RefreshNestedScrollConnection(
                             if (state.indicatorOffset > headerHeight) SmartSwipeStateFlag.TIPS_RELEASE else SmartSwipeStateFlag.TIPS_DOWN
                         if (available.y < 0f) {
                             // 头部已经展示并且上滑动
-                            state.updateOffsetDelta(available.y / 2)
+                            state.updateOffsetDelta(available.y * dragMultiplier)
                             Offset(x = 0f, y = available.y)
                         } else {
                             Offset.Zero
@@ -43,7 +46,7 @@ class RefreshNestedScrollConnection(
                             if (state.indicatorOffset < -footerHeight) SmartSwipeStateFlag.TIPS_RELEASE else SmartSwipeStateFlag.TIPS_DOWN
                         if (available.y > 0f) {
                             // 尾部已经展示并且上滑动
-                            state.updateOffsetDelta(available.y / 2)
+                            state.updateOffsetDelta(available.y * dragMultiplier)
                             Offset(x = 0f, y = available.y)
                         } else {
                             Offset.Zero
@@ -66,7 +69,7 @@ class RefreshNestedScrollConnection(
      *
      * consumed==0代表子布局没有消费事件 即列表没有被滚动
      * 此时事件在available中 把其中的事件传递给header||footer
-     * 调用state.updateOffsetDelta(available.y / 2)做父布局动画
+     * 调用state.updateOffsetDelta(available.y *dragMultiplier)做父布局动画
      * 并且消费掉滑动事件
      *
      * 刷新中不消费事件 拦截子布局即列表的滚动
@@ -76,13 +79,20 @@ class RefreshNestedScrollConnection(
         available: Offset,
         source: NestedScrollSource
     ): Offset {
+        if (available.y < 0
+            && footerHeight != 0.dp
+            && !state.refreshAnimateIsRunning()
+        ){
+            Log.d(TAG, "onPostScroll: enable auto load more")
+        }
         return if (source == NestedScrollSource.Drag && !state.isRefreshing()) {
-            if (available.y != 0f && consumed.y == 0f) {
+            if (available.y != 0f) {
                 if (headerHeight != 0.dp && available.y > 0f) {
-                    state.updateOffsetDelta(available.y / 2)
+                    state.updateOffsetDelta(available.y * dragMultiplier)
                 }
+
                 if (footerHeight != 0.dp && available.y < 0f) {
-                    state.updateOffsetDelta(available.y / 2)
+                    state.updateOffsetDelta(available.y * dragMultiplier)
                 }
                 Offset(x = 0f, y = available.y)
             } else {
@@ -92,13 +102,15 @@ class RefreshNestedScrollConnection(
             Offset.Zero
         }
     }
+
     private val TAG = "RefreshNestedScrollConn"
+
     /**
      * indicatorOffset>=0 header显示 indicatorOffset<=0 footer显示
      * 拖动到头部快速滑动时 如果indicatorOffset>headerHeight则
      */
     override suspend fun onPreFling(available: Velocity): Velocity {
-        Log.d(TAG, "onPreFling() with: available = ${available.toString()}          $headerHeight")
+
         if (!state.isRefreshing()) {
             if (state.indicatorOffset >= headerHeight) {
                 state.animateToOffset(headerHeight)

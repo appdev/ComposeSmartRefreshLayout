@@ -1,11 +1,11 @@
 package com.appdev.compose.composesmartrefreshlayout
 
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -30,17 +30,18 @@ fun SmartRefreshLayout(
     headerThreshold: Dp? = null,
     footerThreshold: Dp? = null,
     swipeStyle: SwipeRefreshStyle = SwipeRefreshStyle.Translate,
-    headerIndicator: @Composable (SmartSwipeRefreshState) -> Unit = { TestRefresh(state) },
-    footerIndicator: @Composable () -> Unit = { MyRefreshHeader(flag = state.loadMoreFlag) },
+    headerIndicator: @Composable (SmartSwipeRefreshState) -> Unit = { MyRefreshHeader(state) },
+    footerIndicator: @Composable () -> Unit = { MyRefreshFooter(flag = state.loadMoreFlag) },
+    dragMultiplier: Float = 0.5f,// 拖拽阻尼系数
     content: @Composable () -> Unit
 ) {
     val density = LocalDensity.current
 
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(Unit) {
         state.indicatorOffsetFlow.collect {
             val currentOffset = with(density) { state.indicatorOffset + it.toDp() }
-            Log.d(TAG, "currentOffset: $currentOffset")
-
             // 重点：解决触摸滑动展示header||footer的时候反向滑动另一边的布局被展示出一个白边出来
             // 当footer显示的情况下，希望父布局的偏移量最大只有0dp，防止尾布局会被偏移几个像素
             // 当header显示的情况下，希望父布局的偏移量最小只有0dp，防止头布局会被偏移几个像素
@@ -93,7 +94,7 @@ fun SmartRefreshLayout(
         }
     }
 
-    val refresh: @Composable () -> Unit = { BuildRefreshHeader(state) }
+    val refresh: @Composable () -> Unit = { BuildRefreshHeader(headerIndicator, state) }
     Box(modifier = modifier.zIndex(-1f)) {
         SubComposeSmartSwipeRefresh(
             headerIndicator = refresh,
@@ -101,9 +102,10 @@ fun SmartRefreshLayout(
             isNeedRefresh,
             isNeedLoadMore
         ) { header, footer ->
-            val smartSwipeRefreshNestedScrollConnection = remember(state, header, footer) {
-                RefreshNestedScrollConnection(state, header, footer)
-            }
+            val smartSwipeRefreshNestedScrollConnection =
+                remember(state, dragMultiplier, header, footer) {
+                    RefreshNestedScrollConnection(scope,state, dragMultiplier, header, footer)
+                }
             Box(
                 modifier.nestedScroll(smartSwipeRefreshNestedScrollConnection),
                 contentAlignment = Alignment.TopCenter
@@ -169,7 +171,6 @@ private fun SubComposeSmartSwipeRefresh(
             subcompose("headerIndicator", headerIndicator).first().measure(constraints)
         val footerIndicatorPlaceable =
             subcompose("footerIndicator", footerIndicator).first().measure(constraints)
-        Log.d(TAG, "SubComposeSmartSwipeRefresh() called with: constraints = ${headerIndicatorPlaceable.height}")
         val contentPlaceable = subcompose("content") {
             content(
                 if (isNeedRefresh) headerIndicatorPlaceable.height.toDp() else 0.dp,
@@ -254,8 +255,9 @@ private fun getContentOffset(
 
 @Composable
 private fun BuildRefreshHeader(
+    headerIndicator: @Composable (SmartSwipeRefreshState) -> Unit,
     state: SmartSwipeRefreshState
 ) {
-    TestRefresh(state)
+    headerIndicator.invoke(state)
 
 }

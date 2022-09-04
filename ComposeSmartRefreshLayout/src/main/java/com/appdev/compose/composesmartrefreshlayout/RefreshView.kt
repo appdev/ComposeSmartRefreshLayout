@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
@@ -29,24 +28,22 @@ fun TestRefresh(state: SmartSwipeRefreshState) {
             .height(80.dp)
             .background(Color.White), contentAlignment = Alignment.Center
     ) {
-        Log.d(TAG, "TestRefresh: $state")
         Column(modifier = Modifier.padding(start = 8.dp)) {
             Text(
                 text = when (state.refreshFlag) {
                     SmartSwipeStateFlag.REFRESHING -> "刷新中..."
                     SmartSwipeStateFlag.SUCCESS -> "刷新成功"
                     SmartSwipeStateFlag.ERROR -> "刷新失败"
-                    SmartSwipeStateFlag.IDLE, SmartSwipeStateFlag.TIPS_DOWN -> "下拉可以刷新"
-                    SmartSwipeStateFlag.TIPS_RELEASE -> "释放立即刷新"
+                    SmartSwipeStateFlag.IDLE, SmartSwipeStateFlag.TIPS_DOWN -> "下拉刷新"
+                    SmartSwipeStateFlag.TIPS_RELEASE -> "释放刷新"
                 }, fontSize = 18.sp
             )
         }
-
     }
 }
 
 @Composable
-fun MyRefreshHeader(flag: SmartSwipeStateFlag, isNeedTimestamp: Boolean = true){
+fun MyRefreshHeader(state: SmartSwipeRefreshState) {
     var lastRecordTime by remember {
         mutableStateOf(System.currentTimeMillis())
     }
@@ -68,15 +65,15 @@ fun MyRefreshHeader(flag: SmartSwipeStateFlag, isNeedTimestamp: Boolean = true){
         ) {
             if (it == 0) 0f else 180f
         }
-        transitionState.targetState = if (flag == SmartSwipeStateFlag.TIPS_RELEASE) 1 else 0
+        transitionState.targetState = if (state.refreshFlag == SmartSwipeStateFlag.TIPS_RELEASE) 1 else 0
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             Icon(
-                modifier = Modifier.rotate(if (flag == SmartSwipeStateFlag.REFRESHING) refreshAnimate else arrowDegrees),
-                imageVector = when (flag) {
+                modifier = Modifier.rotate(if (state.refreshFlag == SmartSwipeStateFlag.REFRESHING) refreshAnimate else arrowDegrees),
+                imageVector = when (state.refreshFlag) {
                     SmartSwipeStateFlag.IDLE -> Icons.Default.KeyboardArrowDown
                     SmartSwipeStateFlag.REFRESHING -> Icons.Default.Refresh
                     SmartSwipeStateFlag.SUCCESS -> {
@@ -94,7 +91,7 @@ fun MyRefreshHeader(flag: SmartSwipeStateFlag, isNeedTimestamp: Boolean = true){
             )
             Column(modifier = Modifier.padding(start = 8.dp)) {
                 Text(
-                    text = when (flag) {
+                    text = when (state.refreshFlag) {
                         SmartSwipeStateFlag.REFRESHING -> "刷新中..."
                         SmartSwipeStateFlag.SUCCESS -> "刷新成功"
                         SmartSwipeStateFlag.ERROR -> "刷新失败"
@@ -102,16 +99,14 @@ fun MyRefreshHeader(flag: SmartSwipeStateFlag, isNeedTimestamp: Boolean = true){
                         SmartSwipeStateFlag.TIPS_RELEASE -> "释放立即刷新"
                     }, fontSize = 18.sp
                 )
-                if (isNeedTimestamp) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "上次刷新：${
-                            SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(
-                                lastRecordTime
-                            )
-                        }", fontSize = 14.sp
-                    )
-                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "上次刷新：${
+                        SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(
+                            lastRecordTime
+                        )
+                    }", fontSize = 14.sp
+                )
             }
         }
     }

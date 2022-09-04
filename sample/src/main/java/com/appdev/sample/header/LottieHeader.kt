@@ -8,38 +8,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.*
-import com.appdev.compose.composesmartrefreshlayout.RefreshComponent
+import com.appdev.compose.composesmartrefreshlayout.SmartSwipeRefreshState
 import com.appdev.compose.composesmartrefreshlayout.SmartSwipeStateFlag
 
 @Composable
-fun LottieRefreshHeader(flag: SmartSwipeStateFlag) {
+fun LottieRefreshHeader(state: SmartSwipeRefreshState) {
     var isPlaying by remember {
         mutableStateOf(false)
     }
-//    val speed by remember {
-//        mutableStateOf(1f)
-//    }
 
-    isPlaying = flag == SmartSwipeStateFlag.REFRESHING
+    isPlaying = state.refreshFlag != SmartSwipeStateFlag.IDLE
+//    isPlaying = state.refreshFlag == SmartSwipeStateFlag.REFRESHING
     val lottieComposition by rememberLottieComposition(LottieCompositionSpec.Asset("green_loading.json"))
 
     val lottieAnimationState by animateLottieCompositionAsState(
-        composition = lottieComposition, // 动画资源句柄
-        iterations = LottieConstants.IterateForever, // 迭代次数
-        isPlaying = isPlaying, // 动画播放状态
+        composition = lottieComposition,
+        iterations = LottieConstants.IterateForever,
+        isPlaying = isPlaying,
 //        speed = speed, // 动画速度状态
-        restartOnPlay = false // 暂停后重新播放是否从头开始
+        restartOnPlay = true // 暂停后重新播放是否从头开始
     )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentHeight().background(Color.Green), contentAlignment = Alignment.Center
+            .height(56.dp), contentAlignment = Alignment.Center
     ) {
         LottieAnimation(
             lottieComposition,
             lottieAnimationState,
-            modifier = Modifier.size(45.dp)
+            modifier = Modifier.size(if (state.indicatorOffset in 0.dp..45.dp) state.indicatorOffset else 40.dp)
         )
 
     }

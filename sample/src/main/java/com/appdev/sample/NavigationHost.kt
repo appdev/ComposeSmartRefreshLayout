@@ -8,10 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.appdev.sample.compose.LottieRefresh
-import com.appdev.sample.compose.LottieRefreshBox
-import com.appdev.sample.compose.RefreshLayoutDemo
-import com.appdev.sample.compose.SmartRefresh2
+import com.appdev.sample.compose.*
 import com.appdev.sample.utils.RouteName
 
 /**
@@ -49,6 +46,11 @@ fun NavigationHost(
             route = RouteName.REFRESH_LOTTIE_HEADER
         ) {
             LottieRefreshBox()
+        }
+        composable(
+            route = RouteName.REFRESH_LAYOUT
+        ) {
+            TestRefreshLayout()
         }
         //H5页面
         composable(

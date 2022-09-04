@@ -51,7 +51,7 @@ fun LottieRefresh(viewModel: MainViewModel = viewModel()) {
         scrollState = scrollState,
         refreshState = refreshState,
         headerIndicator = {
-            LottieRefreshHeader(flag = refreshState.refreshFlag)
+            LottieRefreshHeader(refreshState)
         }) {
 
         LaunchedEffect(mainUiState.value) {

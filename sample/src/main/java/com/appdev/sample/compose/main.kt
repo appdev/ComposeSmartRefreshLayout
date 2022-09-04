@@ -14,9 +14,6 @@ import com.appdev.sample.widget.RefreshColumnItem
 @Composable
 fun RefreshLayoutDemo(navController: NavHostController) {
     val context = LocalContext.current
-    Scaffold() {
-
-    }
     Column {
         LottieView()
         LazyColumn {
@@ -28,7 +25,7 @@ fun RefreshLayoutDemo(navController: NavHostController) {
 //                BasicUsageActivity.navigate(context)
                     RouteUtils.navTo(
                         navController,
-                        RouteName.REFRESH_HEADER
+                        RouteName.REFRESH_LAYOUT
                     )
                 }
             }

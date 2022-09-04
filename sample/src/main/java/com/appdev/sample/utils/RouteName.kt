@@ -5,6 +5,7 @@ object RouteName {
     const val REFRESH_HEADER = "refresh_header"
     const val REFRESH_FIXED_HEADER = "refresh_fixed_header"
     const val REFRESH_LOTTIE_HEADER = "refresh_lottie_header"
+    const val REFRESH_LAYOUT = "refresh_layout"
     const val CATEGORY = "category"
     const val COLLECTION = "collection"
     const val PROFILE = "profile"

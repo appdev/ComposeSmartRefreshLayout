@@ -42,6 +42,8 @@ class SmartSwipeRefreshState {
         )
     )
 
+    fun refreshAnimateIsRunning() = indicatorOffsetAnimatable.isRunning
+
     fun isRefreshing() =
         refreshFlag == SmartSwipeStateFlag.REFRESHING || loadMoreFlag == SmartSwipeStateFlag.REFRESHING || !smartSwipeRefreshAnimateFinishing.isFinishing
 
