@@ -1,6 +1,7 @@
 package com.appdev.compose.composesmartrefreshlayout
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,6 +15,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Created by appdev on 2022/6/13
@@ -93,7 +95,6 @@ fun SmartRefreshLayout(
             else -> {}
         }
     }
-
     val refresh: @Composable () -> Unit = { BuildRefreshHeader(headerIndicator, state) }
     Box(modifier = modifier.zIndex(-1f)) {
         SubComposeSmartSwipeRefresh(
@@ -104,7 +105,12 @@ fun SmartRefreshLayout(
         ) { header, footer ->
             val smartSwipeRefreshNestedScrollConnection =
                 remember(state, dragMultiplier, header, footer) {
-                    RefreshNestedScrollConnection(scope,state, dragMultiplier, header, footer)
+                    RefreshNestedScrollConnection(density, state, dragMultiplier, header, footer) {
+                        scope.launch {
+                            state.snapToOffset(with(density) { it.toDp() })
+                        }
+                        state.loadMoreFlag = SmartSwipeStateFlag.REFRESHING
+                    }
                 }
             Box(
                 modifier.nestedScroll(smartSwipeRefreshNestedScrollConnection),

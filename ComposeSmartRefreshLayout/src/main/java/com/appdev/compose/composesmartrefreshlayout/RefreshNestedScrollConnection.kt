@@ -4,18 +4,19 @@ import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.CoroutineScope
 
 
 class RefreshNestedScrollConnection(
-    val scope: CoroutineScope,
+    val density: Density,
     val state: SmartSwipeRefreshState,
     val dragMultiplier: Float,
     val headerHeight: Dp,
     val footerHeight: Dp,
+    val onLoadMore: (Offset:Float) -> Unit
 ) : NestedScrollConnection {
 
     /**
@@ -82,7 +83,13 @@ class RefreshNestedScrollConnection(
         if (available.y < 0
             && footerHeight != 0.dp
             && !state.refreshAnimateIsRunning()
-        ){
+        ) {
+            val y = available.y + consumed.y
+            val newOffset =
+                (getPx(state.indicatorOffset) + if (source == NestedScrollSource.Drag) y * dragMultiplier else y)
+                    .coerceAtLeast(if (source == NestedScrollSource.Drag) -getPx(footerHeight) else -getPx(footerHeight) )
+                    .coerceAtMost(0f)
+            onLoadMore.invoke(newOffset)
             Log.d(TAG, "onPostScroll: enable auto load more")
         }
         return if (source == NestedScrollSource.Drag && !state.isRefreshing()) {
@@ -119,8 +126,9 @@ class RefreshNestedScrollConnection(
                 state.animateToOffset(-footerHeight)
                 state.loadMoreFlag = SmartSwipeStateFlag.REFRESHING
             } else {
-                if (state.indicatorOffset != 0.dp)
+                if (state.indicatorOffset != 0.dp) {
                     state.animateToOffset(0.dp)
+                }
             }
         }
         return super.onPreFling(available)
@@ -128,5 +136,9 @@ class RefreshNestedScrollConnection(
 
     override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
         return super.onPostFling(consumed, available)
+    }
+
+    fun getPx(dp: Dp):Float {
+        return with(density) { dp.toPx() }
     }
 }

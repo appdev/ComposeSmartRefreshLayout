@@ -34,11 +34,11 @@ fun TestRefreshLayout() {
         RefreshLayout(
             state = refreshState,
             onRefresh = {
-                delay(3000)
+                delay(1000)
                 size = 20
             },
             onLoadMore = {
-                delay(3000)
+                delay(1000)
                 size += 20
             },
 //            twoLevel = {

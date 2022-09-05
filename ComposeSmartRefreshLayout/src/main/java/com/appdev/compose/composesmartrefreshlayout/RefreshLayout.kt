@@ -4,25 +4,20 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollConfiguration
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.Velocity
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -38,15 +33,15 @@ fun RefreshLayout(
     state: RefreshLayoutState,
     onRefresh: suspend () -> Unit = {},
     onLoadMore: suspend () -> Unit = {},
-    refreshHeader: @Composable BoxScope.(RefreshEnum) -> Unit = {
+    refreshHeader: @Composable (RefreshEnum) -> Unit = {
         CommonRefreshHeader(it)
     },
-    refreshFooter: @Composable BoxScope.(RefreshEnum) -> Unit = {
+    refreshFooter: @Composable (RefreshEnum) -> Unit = {
         CommonRefreshFooter(it)
     },
     twoLevel: @Composable BoxScope.() -> Unit = {
     },
-    content: @Composable BoxScope.() -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val mState by rememberUpdatedState(newValue = state)
     RefreshLayout(
@@ -89,12 +84,12 @@ fun RefreshLayout(
     enableTwoLevel: Boolean = false,
 //    enableOffset: Boolean = false,
     enableAutoLoadMore: Boolean = true,
-    refreshMinTime: Long = 800L,
-    refreshHeader: @Composable BoxScope.(RefreshEnum) -> Unit,
-    refreshFooter: @Composable BoxScope.(RefreshEnum) -> Unit,
+    refreshMinTime: Long = 300L,
+    refreshHeader: @Composable (RefreshEnum) -> Unit,
+    refreshFooter: @Composable (RefreshEnum) -> Unit,
     twoLevel: @Composable BoxScope.() -> Unit,
     onTwoLevelCall: (Boolean) -> Unit = {},
-    content: @Composable BoxScope.() -> Unit,
+    content: @Composable () -> Unit,
     enableLoadMore: Boolean = false,
     enableFastScrollTopOver: Boolean = true,
     offsetTop: Animatable<Float, AnimationVector1D>,
@@ -102,6 +97,7 @@ fun RefreshLayout(
     onLoadMore: suspend () -> Unit,
 ) {
     val TAG = "RefreshLayout"
+    val density = LocalDensity.current
     // 拖拽阻尼系数
     val dragMultiplier = 0.5f
     //加载更多比例 footerHeight / loadMoreRate
@@ -134,9 +130,9 @@ fun RefreshLayout(
         mutableStateOf(0f)
     }
     //顶部偏移量
-    val topOffset by rememberUpdatedState(newValue = offsetTop)
+    val topIndicatorOffset by rememberUpdatedState(newValue = offsetTop)
     //底部偏移量
-    val bottomOffset by rememberUpdatedState(newValue = offsetBottom)
+    val bottomIndicatorOffset by rememberUpdatedState(newValue = offsetBottom)
 
     //自动刷新
     val innerAutoRefresh by rememberUpdatedState(newValue = autoRefresh)
@@ -196,7 +192,7 @@ fun RefreshLayout(
             innerIsLoadingMore = false
             innerDoRefresh()
             val refreshTime = System.currentTimeMillis() - startTime
-            if (refreshTime<refreshMinTime){
+            if (refreshTime < refreshMinTime) {
                 delay(refreshMinTime - refreshTime)
             }
             setInnerRefreshState(RefreshEnum.RefreshFinish)
@@ -207,8 +203,8 @@ fun RefreshLayout(
 
     //<editor-fold desc="自动刷新">
     LaunchedEffect(key1 = innerAutoRefresh, block = {
-        if (innerAutoRefresh != null&& !innerIsRefresh) {
-            bottomOffset.snapTo(0f)
+        if (innerAutoRefresh != null && !innerIsRefresh) {
+            bottomIndicatorOffset.snapTo(0f)
             if (innerRefreshState.isTwoLevel) {
                 onTwoLevelCall(false)
             }
@@ -223,11 +219,11 @@ fun RefreshLayout(
             if (innerIsTwoLevel as Boolean) {
                 setInnerRefreshState(RefreshEnum.TwoLevelReleased)
             } else {
-                if (topOffset.value != 0f) {
+                if (topIndicatorOffset.value != 0f) {
                     setInnerRefreshState(RefreshEnum.TwoLevelFinish)
                 }
             }
-        }else{
+        } else {
             if (innerIsTwoLevel is Boolean) {
                 onTwoLevelCall(false)
             }
@@ -239,8 +235,8 @@ fun RefreshLayout(
     LaunchedEffect(key1 = innerRefreshState, block = {
         when (innerRefreshState) {
             RefreshEnum.None -> {
-                if (!innerIsRefresh ) {
-                    topOffset.snapTo(0f)
+                if (!innerIsRefresh) {
+                    topIndicatorOffset.snapTo(0f)
                 }
             }
             //<editor-fold desc="refresh ">
@@ -248,7 +244,7 @@ fun RefreshLayout(
             }
             RefreshEnum.PullDownCanceled -> {
                 if (!innerIsRefresh) {
-                    topOffset.animateTo(0f)
+                    topIndicatorOffset.animateTo(0f)
                     setInnerRefreshState(RefreshEnum.None)
                 }
             }
@@ -261,13 +257,13 @@ fun RefreshLayout(
                 if (!innerIsRefresh) {
                     innerIsRefresh = true
                 }
-                topOffset.animateTo(headerHeight)
+                topIndicatorOffset.animateTo(headerHeight)
             }
             RefreshEnum.RefreshFinish -> {
-                if(innerIsTwoLevel != true){
-                    topOffset.animateTo(0f)
+                if (innerIsTwoLevel != true) {
+                    topIndicatorOffset.animateTo(0f)
                     setInnerRefreshState(RefreshEnum.None)
-                }else{
+                } else {
                     setInnerRefreshState(RefreshEnum.TwoLevel)
                 }
             }
@@ -278,14 +274,14 @@ fun RefreshLayout(
             }
             RefreshEnum.TwoLevelReleased -> {
                 onTwoLevelCall(true)
-                topOffset.animateTo(maxHeight + headerHeight)
+                topIndicatorOffset.animateTo(maxHeight + headerHeight)
                 setInnerRefreshState(RefreshEnum.TwoLevel)
             }
             RefreshEnum.TwoLevel -> {
             }
             RefreshEnum.TwoLevelFinish -> {
                 onTwoLevelCall(false)
-                topOffset.animateTo(0f)
+                topIndicatorOffset.animateTo(0f)
                 setInnerRefreshState(RefreshEnum.None)
             }
             //</editor-fold>
@@ -300,28 +296,28 @@ fun RefreshLayout(
         when (innerLoadState) {
             RefreshEnum.None -> {
                 if (!innerIsLoadingMore) {
-                    bottomOffset.snapTo(0f)
+                    bottomIndicatorOffset.snapTo(0f)
                 }
             }
 
             RefreshEnum.PullUpToLoad -> {
             }
             RefreshEnum.LoadFinish -> {
-                bottomOffset.animateTo(0f)
+                bottomIndicatorOffset.animateTo(0f)
                 setInnerLoadState(RefreshEnum.None)
             }
             RefreshEnum.Loading -> {
                 if (!innerIsLoadingMore) {
                     innerIsLoadingMore = true
                 }
-                bottomOffset.animateTo(-footerHeight)
+                bottomIndicatorOffset.animateTo(-footerHeight)
             }
             RefreshEnum.ReleaseToLoad -> {
                 setInnerLoadState(RefreshEnum.Loading)
             }
             RefreshEnum.PullUpCanceled -> {
                 if (!innerIsLoadingMore) {
-                    bottomOffset.animateTo(0f)
+                    bottomIndicatorOffset.animateTo(0f)
                 }
             }
 
@@ -339,9 +335,9 @@ fun RefreshLayout(
             ): Offset {
 
                 //<editor-fold desc="刷新出来 上推">
-                if (available.y < 0f && topOffset.value > 0f /*&& source == NestedScrollSource.Drag*/ && innerEnableRefresh) {
-                    if (!topOffset.isRunning) {
-                        val fl = (topOffset.value + available.y).coerceAtLeast(0f)
+                if (available.y < 0f && topIndicatorOffset.value > 0f /*&& source == NestedScrollSource.Drag*/ && innerEnableRefresh) {
+                    if (!topIndicatorOffset.isRunning) {
+                        val fl = (topIndicatorOffset.value + available.y).coerceAtLeast(0f)
                         if (!innerIsRefresh) {
                             if (fl > headerHeight * twoLevelRate && innerEnableTwoLevel) {
                                 setInnerRefreshState(RefreshEnum.TwoLeveling)
@@ -351,7 +347,7 @@ fun RefreshLayout(
                         }
 
                         scope.launch {
-                            topOffset.snapTo(fl)
+                            topIndicatorOffset.snapTo(fl)
                         }
                     }
                     return Offset.Zero
@@ -359,19 +355,19 @@ fun RefreshLayout(
                 //</editor-fold>
 
                 //<editor-fold desc="加载view出来 下推">
-                if (available.y > 0 && bottomOffset.value < 0 /*&& innerEnableLoadMore*/ && !bottomOffset.isRunning) {
-                    val fl = (bottomOffset.value + available.y)
+                if (available.y > 0 && bottomIndicatorOffset.value < 0 /*&& innerEnableLoadMore*/ && !bottomIndicatorOffset.isRunning) {
+                    val fl = (bottomIndicatorOffset.value + available.y)
                         .coerceAtLeast(-footerHeight).coerceAtMost(0f)
                     if (!innerIsLoadingMore) {
                         setInnerLoadState(RefreshEnum.PullUpToLoad)
                     }
                     scope.launch {
-                        bottomOffset.snapTo(fl)
+                        bottomIndicatorOffset.snapTo(fl)
                     }
 //                    if (innerEnableOffset) {
 //                        return Offset(0f, available.y)
 //                    } else {
-                        return Offset.Zero
+                    return Offset.Zero
 //                    }
                 }
                 //</editor-fold>
@@ -395,19 +391,23 @@ fun RefreshLayout(
                     val v = available.y - consumed.y
                     val rate = v / maxHeight
                     if (rate > 1) {
-                        topOffset.animateTo((rate * S * dragMultiplier).coerceAtMost(headerHeight * maxDrag))
-                        topOffset.animateTo(0f)
+                        topIndicatorOffset.animateTo(
+                            (rate * S * dragMultiplier).coerceAtMost(
+                                headerHeight * maxDrag
+                            )
+                        )
+                        topIndicatorOffset.animateTo(0f)
                     }
                 }
                 //</editor-fold>
 
                 //<editor-fold desc="上拉 或者上拉取消">
                 if (innerEnableLoadMore && !innerIsLoadingMore) {
-                    if (bottomOffset.value <= -footerHeight * loadMoreRate) {
+                    if (bottomIndicatorOffset.value <= -footerHeight * loadMoreRate) {
                         setInnerLoadState(RefreshEnum.ReleaseToLoad)
                     }
 
-                    if (bottomOffset.value < 0f && bottomOffset.value > -footerHeight * loadMoreRate) {
+                    if (bottomIndicatorOffset.value < 0f && bottomIndicatorOffset.value > -footerHeight * loadMoreRate) {
                         setInnerLoadState(RefreshEnum.PullUpCanceled)
                     }
                 }
@@ -415,9 +415,9 @@ fun RefreshLayout(
 
                 //<editor-fold desc="下拉加载 取消 二楼">
                 if (innerEnableRefresh) {
-                    if (topOffset.value > headerHeight) {
+                    if (topIndicatorOffset.value > headerHeight) {
                         if (innerEnableTwoLevel && !innerIsRefresh) {
-                            if (topOffset.value > headerHeight * twoLevelRate) {
+                            if (topIndicatorOffset.value > headerHeight * twoLevelRate) {
                                 setInnerRefreshState(RefreshEnum.TwoLevelReleased)
                             } else {
                                 setInnerRefreshState(RefreshEnum.ReleaseToRefresh)
@@ -426,7 +426,7 @@ fun RefreshLayout(
                             setInnerRefreshState(RefreshEnum.ReleaseToRefresh)
                         }
                     } else {
-                        if (!innerIsRefresh&&topOffset.value> 0f) {
+                        if (!innerIsRefresh && topIndicatorOffset.value > 0f) {
                             setInnerRefreshState(RefreshEnum.PullDownCanceled)
                         }
                     }
@@ -455,29 +455,33 @@ fun RefreshLayout(
                     && innerEnableRefresh
                 ) {
                     val newOffset =
-                        (topOffset.value + if (innerIsRefresh) consumed.y + available.y else (available.y * dragMultiplier))
+                        (topIndicatorOffset.value + if (innerIsRefresh) consumed.y + available.y else (available.y * dragMultiplier))
                             .coerceAtLeast(0f)
                             .coerceAtMost(if (innerIsRefresh) headerHeight else headerHeight * maxDrag)
                     if (newOffset > headerHeight * twoLevelRate && innerEnableTwoLevel && !innerIsRefresh) {
                         setInnerRefreshState(RefreshEnum.TwoLeveling)
                         scope.launch {
-                            topOffset.snapTo(newOffset)
+                            topIndicatorOffset.snapTo(newOffset)
                         }
-                        return Offset(0f,
-                            if (innerIsRefresh) consumed.y + available.y else available.y / dragMultiplier)
+                        return Offset(
+                            0f,
+                            if (innerIsRefresh) consumed.y + available.y else available.y / dragMultiplier
+                        )
                     }
 
-                    if (!topOffset.isRunning) {
+                    if (!topIndicatorOffset.isRunning) {
                         if (!innerIsRefresh) {
                             setInnerRefreshState(RefreshEnum.PullDownToRefresh)
                         }
                         scope.launch {
-                            topOffset.snapTo(newOffset)
+                            topIndicatorOffset.snapTo(newOffset)
                         }
                     }
 //                    if (innerEnableOffset) {
-                        return Offset(0f,
-                            if (innerIsRefresh) available.y else available.y / dragMultiplier)
+                    return Offset(
+                        0f,
+                        if (innerIsRefresh) available.y else available.y / dragMultiplier
+                    )
 //                    } else {
 //                        return Offset.Zero
 //                    }
@@ -489,16 +493,16 @@ fun RefreshLayout(
                 if (available.y < 0
                     && innerEnableLoadMore
                     && auto
-                    && !bottomOffset.isRunning
+                    && !bottomIndicatorOffset.isRunning
                 ) {
                     val y = available.y + consumed.y
                     val newOffset =
-                        (bottomOffset.value + if (source == NestedScrollSource.Drag) y * dragMultiplier else y)
+                        (bottomIndicatorOffset.value + if (source == NestedScrollSource.Drag) y * dragMultiplier else y)
                             .coerceAtLeast(if (source == NestedScrollSource.Drag) (-footerHeight * maxDrag) else -footerHeight)
                             .coerceAtMost(0f)
 
                     scope.launch {
-                        bottomOffset.snapTo(newOffset)
+                        bottomIndicatorOffset.snapTo(newOffset)
                     }
                     if (!innerIsLoadingMore) {
                         setInnerLoadState(RefreshEnum.PullUpToLoad)
@@ -507,7 +511,7 @@ fun RefreshLayout(
 //                        return Offset(0f,
 //                            if (innerIsRefresh) available.y else available.y / dragMultiplier)
 //                    } else {
-                        return Offset.Zero
+                    return Offset.Zero
 //                    }
                 }
                 //</editor-fold>
@@ -520,107 +524,169 @@ fun RefreshLayout(
     //</editor-fold>
 
     //overScroll -:> never UI
+    val refresh: @Composable () -> Unit = { InnerRefreshHeader(refreshHeader, innerRefreshState) }
+    val footer: @Composable () -> Unit = { InnerRefreshHeader(refreshFooter, innerLoadState) }
     CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
-        Box(
-            modifier = modifier
-                .zIndex(-1f)
-                .nestedScroll(connection)
-                .onGloballyPositioned {
-                    if (maxHeight == 0f) {
-                        maxHeight = it.size.height.toFloat()
-                    }
-                }
-        ) {
-            //<editor-fold desc="二楼UI">
-            if (enableTwoLevel && innerRefreshState.isTwoLevel) {
-                Box(Modifier
-                    .fillMaxSize()
-                    .offset { IntOffset(0, (topOffset.value - maxHeight - headerHeight).toInt()) }
-                ) {
-                    twoLevel()
-                }
-            }
-            //</editor-fold>
-
-            //<editor-fold desc="headerUI">
-            if (innerEnableRefresh) {
-                Box(modifier = Modifier
-                    .fillMaxWidth()
+        SubComposeSmartSwipeRefresh(
+            headerIndicator = refresh,
+            footerIndicator = footer,
+            innerEnableRefresh,
+            innerEnableLoadMore
+        ) { header, footer ->
+            headerHeight = header
+            footerHeight = footer
+            Box(
+                modifier = modifier
+                    .zIndex(-1f)
+                    .nestedScroll(connection)
                     .onGloballyPositioned {
-                        if (headerHeight == 0f) {
-                            headerHeight = it.size.height.toFloat()
+                        if (maxHeight == 0f) {
+                            maxHeight = it.size.height.toFloat()
                         }
                     }
-                    .offset { IntOffset(0, (topOffset.value - headerHeight).toInt()) }
-                ) {
-                    refreshHeader(innerRefreshState)
-                }
-            }
-            //</editor-fold>
-
-            //<editor-fold desc="content UI">
-            Box(modifier = Modifier
-                .offset {
-                    IntOffset(0, (topOffset.value + bottomOffset.value).toInt())
-                }) {
-                content()
-            }
-            //</editor-fold>
-
-            //<editor-fold desc="加载更多UI">
-            if (innerEnableLoadMore) {
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .onGloballyPositioned {
-                        if (footerHeight == 0f) {
-                            footerHeight = it.size.height.toFloat()
-                        }
+            ) {
+                //<editor-fold desc="二楼UI">
+                if (enableTwoLevel && innerRefreshState.isTwoLevel) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .offset {
+                                IntOffset(
+                                    0,
+                                    (topIndicatorOffset.value - maxHeight - headerHeight).toInt()
+                                )
+                            }
+                    ) {
+                        twoLevel()
                     }
+                }
+                //</editor-fold>
+
+                //<editor-fold desc="headerUI">
+                if (innerEnableRefresh) {
+                    Box(modifier = Modifier
+                        .fillMaxWidth()
+                        .offset {
+                            IntOffset(
+                                0,
+                                (topIndicatorOffset.value - headerHeight).toInt()
+                            )
+                        }
+                    ) {
+                        refresh.invoke()
+                    }
+                }
+                //</editor-fold>
+
+                //<editor-fold desc="content UI">
+                Box(modifier = Modifier
                     .offset {
-                        IntOffset(0,
-                            (bottomOffset.value + footerHeight + if (topOffset.value > 0) topOffset.value else 0f).toInt())
-                    }
-                ) {
-                    refreshFooter(innerLoadState)
+                        IntOffset(
+                            0,
+                            (topIndicatorOffset.value + bottomIndicatorOffset.value).toInt()
+                        )
+                    }) {
+                    content()
                 }
+                //</editor-fold>
+
+                //<editor-fold desc="加载更多UI">
+                if (innerEnableLoadMore) {
+                    Box(modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .offset {
+                            IntOffset(
+                                0,
+                                (bottomIndicatorOffset.value + footerHeight + if (topIndicatorOffset.value > 0) topIndicatorOffset.value else 0f).toInt()
+                            )
+                        }
+                    ) {
+                        refreshFooter(innerLoadState)
+                    }
+                }
+                //</editor-fold>
             }
-            //</editor-fold>
+        }
+
+    }
+}
+
+@Composable
+private fun SubComposeSmartSwipeRefresh(
+    headerIndicator: @Composable () -> Unit,
+    footerIndicator: @Composable () -> Unit,
+    isNeedRefresh: Boolean,
+    isNeedLoadMore: Boolean,
+    content: @Composable (header: Float, footer: Float) -> Unit
+) {
+    SubcomposeLayout { constraints: Constraints ->
+        val headerIndicatorPlaceable =
+            subcompose("headerIndicator", headerIndicator).first().measure(constraints)
+        val footerIndicatorPlaceable =
+            subcompose("footerIndicator", footerIndicator).first().measure(constraints)
+        val contentPlaceable = subcompose("content") {
+            content(
+                if (isNeedRefresh) headerIndicatorPlaceable.height.toFloat() else 0f,
+                if (isNeedLoadMore) footerIndicatorPlaceable.height.toFloat() else 0f
+            )
+        }.map {
+            it.measure(constraints)
+        }.first()
+        layout(contentPlaceable.width, contentPlaceable.height) {
+            contentPlaceable.placeRelative(0, 0)
         }
     }
 }
 
-
 @Composable
 fun CommonRefreshFooter(state: RefreshEnum) {
-
-    Box(Modifier
-        .fillMaxWidth()
-        .height(50.dp)) {
-        if (state!=RefreshEnum.None) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+    ) {
+        if (state != RefreshEnum.None) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
-
     }
 }
 
 @Composable
 fun CommonRefreshHeader(state: RefreshEnum) {
     val mState by rememberUpdatedState(newValue = state)
-    Box(Modifier
-        .fillMaxWidth()
-        .height(50.dp)) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+    ) {
         Text(mState.toString(), modifier = Modifier.align(Alignment.Center))
     }
+}
 
+@Composable
+fun InnerRefreshHeader(
+    refreshHeader: @Composable() (RefreshEnum) -> Unit,
+    state: RefreshEnum
+) {
+    refreshHeader.invoke(state)
+}
+
+@Composable
+fun InnerRefreshFooter(
+    refreshHeader: @Composable() (RefreshEnum) -> Unit,
+    state: RefreshEnum
+) {
+    refreshHeader.invoke(state)
 }
 
 
 class RefreshLayoutState {
-    internal var refreshMinTime: Long by mutableStateOf(800L)
+    internal var refreshMinTime: Long by mutableStateOf(300L)
     internal var _autoRefresh: Int? by mutableStateOf(null)
     internal var _enableRefresh: Boolean by mutableStateOf(false)
-//    internal var _enableOffset: Boolean by mutableStateOf(true)
+
+    //    internal var _enableOffset: Boolean by mutableStateOf(true)
     internal var _isTwoLevel: Boolean? by mutableStateOf(null)
     internal var _enableTwoLevel: Boolean by mutableStateOf(false)
     internal var _enableLoadMore: Boolean by mutableStateOf(false)
